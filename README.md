@@ -25,21 +25,22 @@ It wrote the code, ran away, and now the game is unplayable.
 
 ## 📝 Document Your Experience
 
-- [ ] Describe the game's purpose.
-- [ ] Detail which bugs you found.
-- [ ] Explain what fixes you applied.
+- Purpose: A Streamlit number guessing game where you guess a secret number within a limited number of attempts, using higher/lower hints. Difficulty sets the range and attempts.
+- Bugs: Inverted hints, no range check on guesses, New Game didn't reset the session, and attempts could go negative.
+- Fixes: Swapped the hint messages, added bounds checking to parse_guess, added a reset_game() helper, and clamped attempts at 0 while disabling input when the game ends. Each fix is marked with a # FIX: comment in app.py.
 
 ## 📸 Demo Walkthrough
 
 Describe your fixed game in numbered steps so a reader can follow along without watching a video:
 
-1. <!-- Describe this step -->
-2. <!-- Describe this step -->
-3. <!-- Describe this step -->
-4. <!-- Describe this step -->
-5. <!-- Add more steps as needed -->
+1. User chooses game difficulty
+2. User enters a guess of 21
+3. Game returns "Go HIGHER!"
+4. User enters a guess of 99, and the game returns "Go LOWER!"
+5. Game ends when user guesses the secret number or run out of attempts
+6. User can start a new game
 
-**Screenshot** *(optional)*: <!-- Insert a screenshot of your fixed, winning game here -->
+**Screenshot** *(optional)*: image.png
 
 ## 🧪 Test Results
 
