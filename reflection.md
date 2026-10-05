@@ -36,7 +36,7 @@ One suggestion that was correct was the inverted hints. The suggested fix was to
 I verified the result by implementing the fix and seeing that the game outputs the correct hint.
 
 - Give one example of an AI suggestion you did not accept as written (including what the AI suggested, why you rejected or changed it, and how you verified your version). It does not have to be a suggestion that was wrong: over-engineered, out of scope, harder to read, or a poor fit for this codebase all count.
-One AI suggestion I did not accept was when Claude attempted to rebuild the submit flower so feedback is saved in st.session_state.feedback. It ended every sumit with st.rerun() and reset_game() on difficulty change. It was quite difficult to read and understand, along with the fact that I only asked Claude to fix the attempt range and not overextend on the diffulcty-change resets.
+One AI suggestion I did not accept was when Claude attempted to rebuild the submit flow so feedback is saved in st.session_state.feedback. It ended every submit with st.rerun() and reset_game() on difficulty change. It was hard to read, and I had only asked Claude to fix the attempts logic, not to add difficulty-change resets.
 
 ---
 
@@ -47,17 +47,18 @@ I would implement the change then play-test it myself to see if it would output 
 
 - Describe at least one test you ran (manual or using pytest)  
   and what it showed you about your code.
-A main test I ran was the attempts counter. I played a full game on Normal, guessing until I ran out of attemps. I noticed that counter did not stop at 0 as expected and went into the negatives. I looked into the attemps logic and, with help from Claude, saw that the attemps logic and new game reset were tied together. I had claude run the same scenario with Streamlit's built-in test to confirm that expending all guesses lead to a "lost" status.
+One main test I ran was on the attempts counter. I played a full game on Normal, guessing until I ran out of attempts. I noticed that the counter did not stop at 0 as expected and went into the negatives. I looked into the attempts logic and, with help from Claude, saw that the attempts logic and the new game reset were tied together. I had Claude run the same scenario with Streamlit's built-in test to confirm that using all the guesses led to a "lost" status.
 
 - Did AI help you design or understand any tests? How?
-Yes, Claude pointed me to where the bug came from in the code. For example, it explained that the odd hints came from two bugs stacking. It also suggested what to try when I tested, like guessing above and below the secret. The cherry on top is it running a simulated game test for me.
+Yes, Claude pointed me to where the bug came from in the code. For example, it explained that the odd hints came from two bugs stacking. It also suggested what to try when I tested, like guessing above and below the secret. Finally, it ran a simulated game test for me.
 
 ---
 
 ## 4. What did you learn about Streamlit and state?
 
 - How would you explain Streamlit "reruns" and session state to a friend who has never used Streamlit?
-Streamlit essentially reruns the whole Python file everytime a piece of code is changed. As a result, the variables in memory gets wiped out each rerun, so the game would forget the secret numer and attempts everytime a guess is inputted. Session state is the state of memory where variable values like secret, attempts, and score are stored.
+Streamlit essentially reruns the whole Python file every time you click a button or change an input. As a result, the variables in memory get wiped out on each rerun, so the game would forget the secret number and attempts every time a guess is entered. Session state is the part of memory that survives reruns, where values like the secret, attempts, and score are stored.
+
 ---
 
 ## 5. Looking ahead: your developer habits
@@ -67,7 +68,7 @@ Streamlit essentially reruns the whole Python file everytime a piece of code is 
 One strategy I would reuse is testing the fix with nearby cases. This ensures I can catch more bugs and test edge cases.
 
 - What is one thing you would do differently next time you work with AI on a coding task?
-I would be more specific with what I want Claude to do. Many of the fixes came with overextension where Claude implemented "fixes" that I didn't ask for. It didn't bug out the game but it bloats the app.
+I would be more specific with what I want Claude to do. Many of the fixes came with overextension where Claude implemented "fixes" that I didn't ask for. It didn't break the game, but it bloated the app.
 
 - In one or two sentences, describe how this project changed the way you think about AI generated code.
 This project showed me how buggy AI code can be. There were so many logic errors that showed up immediately when a real human play-tested it.

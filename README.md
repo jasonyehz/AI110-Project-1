@@ -25,7 +25,7 @@ It wrote the code, ran away, and now the game is unplayable.
 
 ## 📝 Document Your Experience
 
-- Purpose: A Streamlit number guessing game where you guess a secret number within a limited number of attempts, using higher/lower hints. Difficulty sets the range and attempts.
+- Purpose: A number guessing game where you guess a secret number within a limited number of attempts given higher/lower hints. Difficulty sets the range and attempts.
 - Bugs: Inverted hints, no range check on guesses, New Game didn't reset the session, and attempts could go negative.
 - Fixes: Swapped the hint messages, added bounds checking to parse_guess, added a reset_game() helper, and clamped attempts at 0 while disabling input when the game ends. Each fix is marked with a # FIX: comment in app.py.
 
