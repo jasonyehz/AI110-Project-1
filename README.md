@@ -40,7 +40,9 @@ Describe your fixed game in numbered steps so a reader can follow along without 
 5. Game ends when user guesses the secret number or run out of attempts
 6. User can start a new game
 
-**Screenshot** *(optional)*: image.png
+**Screenshot** *(optional)*:
+
+![Fixed game screenshot](image.png)
 
 ## 🧪 Test Results
 
