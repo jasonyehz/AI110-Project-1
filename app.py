@@ -11,7 +11,7 @@ def get_range_for_difficulty(difficulty: str):
     return 1, 100
 
 
-def parse_guess(raw: str):
+def parse_guess(raw: str, low: int, high: int):
     if raw is None:
         return False, None, "Enter a guess."
 
@@ -26,25 +26,29 @@ def parse_guess(raw: str):
     except Exception:
         return False, None, "That is not a number."
 
+    # FIX: Added bounds check using new low/high parameters so out-of-range guesses are rejected (Claude)
+    if value < low or value > high:
+        return False, None, f"Guess must be between {low} and {high}."
+
     return True, value, None
 
 
 def check_guess(guess, secret):
     if guess == secret:
         return "Win", "🎉 Correct!"
-
     try:
+        # FIX: Inverted hints corrected: a guess above the secret now says Go LOWER, below says Go HIGHER (Claude)
         if guess > secret:
-            return "Too High", "📈 Go HIGHER!"
+            return "Too High", "📉 Go LOWER!"
         else:
-            return "Too Low", "📉 Go LOWER!"
+            return "Too Low", "📈 Go HIGHER!"
     except TypeError:
         g = str(guess)
         if g == secret:
             return "Win", "🎉 Correct!"
         if g > secret:
-            return "Too High", "📈 Go HIGHER!"
-        return "Too Low", "📉 Go LOWER!"
+            return "Too High", "📉 Go LOWER!"
+        return "Too Low", "📈 Go HIGHER!"
 
 
 def update_score(current_score: int, outcome: str, attempt_number: int):
@@ -89,26 +93,33 @@ low, high = get_range_for_difficulty(difficulty)
 st.sidebar.caption(f"Range: {low} to {high}")
 st.sidebar.caption(f"Attempts allowed: {attempt_limit}")
 
-if "secret" not in st.session_state:
+# FIX: Pressing new game resets attemps, score, status, and input (Claude)
+def reset_game():
     st.session_state.secret = random.randint(low, high)
-
-if "attempts" not in st.session_state:
-    st.session_state.attempts = 1
-
-if "score" not in st.session_state:
+    st.session_state.attempts = 0
     st.session_state.score = 0
-
-if "status" not in st.session_state:
     st.session_state.status = "playing"
-
-if "history" not in st.session_state:
     st.session_state.history = []
+    st.session_state.feedback = []
+    st.session_state.balloons = False
+    st.session_state.pop(f"guess_input_{difficulty}", None)
+
+
+# FIX: Changing difficulty starts a fresh game so old attempts don't carry over to the new limit/range (Claude)
+if "status" not in st.session_state or st.session_state.get("difficulty") != difficulty:
+    st.session_state.difficulty = difficulty
+    reset_game()
+
+playing = st.session_state.status == "playing"
+# FIX: Attempts now start at 0 and remaining attempts can't go negative (Claude)
+attempts_left = max(attempt_limit - st.session_state.attempts, 0)
 
 st.subheader("Make a guess")
 
 st.info(
-    f"Guess a number between 1 and 100. "
-    f"Attempts left: {attempt_limit - st.session_state.attempts}"
+    # FIX: Info text uses the difficulty's real range instead of hardcoded 1-100 (Claude)
+    f"Guess a number between {low} and {high}. "
+    f"Attempts left: {attempts_left}"
 )
 
 with st.expander("Developer Debug Info"):
@@ -120,38 +131,43 @@ with st.expander("Developer Debug Info"):
 
 raw_guess = st.text_input(
     "Enter your guess:",
-    key=f"guess_input_{difficulty}"
+    key=f"guess_input_{difficulty}",
+    # FIX: Guess box disabled once the game is won/lost (Claude)
+    disabled=not playing,
 )
 
 col1, col2, col3 = st.columns(3)
 with col1:
-    submit = st.button("Submit Guess 🚀")
+    # FIX: Submit button disabled once the game is won/lost so no more guesses are accepted (Claude)
+    submit = st.button("Submit Guess 🚀", disabled=not playing)
 with col2:
     new_game = st.button("New Game 🔁")
 with col3:
     show_hint = st.checkbox("Show hint", value=True)
 
 if new_game:
-    st.session_state.attempts = 0
-    st.session_state.secret = random.randint(1, 100)
-    st.success("New game started.")
+    reset_game()
     st.rerun()
 
-if st.session_state.status != "playing":
-    if st.session_state.status == "won":
-        st.success("You already won. Start a new game to play again.")
-    else:
-        st.error("Game over. Start a new game to try again.")
-    st.stop()
+if st.session_state.balloons:
+    st.session_state.balloons = False
+    st.balloons()
 
-if submit:
+for kind, text in st.session_state.feedback:
+    getattr(st, kind)(text)
+
+if not playing:
+    st.info("Start a new game to play again.")
+
+if submit and playing:
     st.session_state.attempts += 1
+    st.session_state.feedback = []
 
-    ok, guess_int, err = parse_guess(raw_guess)
+    ok, guess_int, err = parse_guess(raw_guess, low, high)
 
     if not ok:
         st.session_state.history.append(raw_guess)
-        st.error(err)
+        st.session_state.feedback.append(("error", err))
     else:
         st.session_state.history.append(guess_int)
 
@@ -163,7 +179,7 @@ if submit:
         outcome, message = check_guess(guess_int, secret)
 
         if show_hint:
-            st.warning(message)
+            st.session_state.feedback.append(("warning", message))
 
         st.session_state.score = update_score(
             current_score=st.session_state.score,
@@ -172,20 +188,25 @@ if submit:
         )
 
         if outcome == "Win":
-            st.balloons()
+            st.session_state.balloons = True
             st.session_state.status = "won"
-            st.success(
+            st.session_state.feedback.append((
+                "success",
                 f"You won! The secret was {st.session_state.secret}. "
-                f"Final score: {st.session_state.score}"
-            )
-        else:
-            if st.session_state.attempts >= attempt_limit:
-                st.session_state.status = "lost"
-                st.error(
-                    f"Out of attempts! "
-                    f"The secret was {st.session_state.secret}. "
-                    f"Score: {st.session_state.score}"
-                )
+                f"Final score: {st.session_state.score}",
+            ))
+
+    # FIX: Stop the game when attempts hit the limit; status flips to "lost" and the rerun below disables input (Claude)
+    if st.session_state.status == "playing" and st.session_state.attempts >= attempt_limit:
+        st.session_state.status = "lost"
+        st.session_state.feedback.append((
+            "error",
+            f"Out of attempts! "
+            f"The secret was {st.session_state.secret}. "
+            f"Score: {st.session_state.score}",
+        ))
+
+    st.rerun()
 
 st.divider()
 st.caption("Built by an AI that claims this code is production-ready.")
